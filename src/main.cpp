@@ -4721,6 +4721,18 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             return false;
         }
 
+        // When Overwinter is active, reject incoming connections from non-Overwinter nodes
+        if (NetworkUpgradeActive(GetHeight(), chainparams.GetConsensus(), Consensus::UPGRADE_OVERWINTER)
+            && pfrom->nVersion < NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nProtocolVersion)
+        {
+            LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+            pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                            strprintf("Version must be %d or greater",
+                            NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nProtocolVersion));
+            pfrom->fDisconnect = true;
+            return false;
+        }
+
         if (pfrom->nVersion == 10300)
             pfrom->nVersion = 300;
         if (!vRecv.empty())
@@ -4836,6 +4848,23 @@ bool static ProcessMessage(CNode* pfrom, string strCommand, CDataStream& vRecv, 
             LOCK(cs_main);
             State(pfrom->GetId())->fCurrentlyConnected = true;
         }
+    }
+
+
+    // Disconnect existing peer connection when:
+    // 1. The version message has been received
+    // 2. Overwinter is active
+    // 3. Peer version is pre-Overwinter
+    // 4. Peer branch id is not supported
+    else if (NetworkUpgradeActive(GetHeight(), chainparams.GetConsensus(), Consensus::UPGRADE_OVERWINTER)
+            && (pfrom->nVersion < NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nProtocolVersion))
+    {
+        LogPrintf("peer=%d using obsolete version %i; disconnecting\n", pfrom->id, pfrom->nVersion);
+        pfrom->PushMessage("reject", strCommand, REJECT_OBSOLETE,
+                            strprintf("Version must be %d or greater",
+                            NetworkUpgradeInfo[Consensus::UPGRADE_OVERWINTER].nProtocolVersion));
+        pfrom->fDisconnect = true;
+        return false;
     }
 
 

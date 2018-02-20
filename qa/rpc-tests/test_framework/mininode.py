@@ -39,6 +39,7 @@ from .equihash import (
     zcash_person,
 )
 
+OVERWINTER_PROTO_VERSION = 170003
 BIP0031_VERSION = 60000
 MY_VERSION = 170002  # past bip-31 for ping/pong
 MY_SUBVERSION = "/python-mininode-tester:0.0.1/"
