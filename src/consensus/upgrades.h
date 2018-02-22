@@ -22,6 +22,8 @@ struct NUInfo {
     std::string strName;
     /** User-facing information string about the upgrade */
     std::string strInfo;
+    /** First protocol version which understands the upgrade */
+    int nProtocolVersion;
 };
 
 extern const struct NUInfo NetworkUpgradeInfo[];
