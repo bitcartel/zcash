@@ -20,7 +20,7 @@ const struct NUInfo NetworkUpgradeInfo[Consensus::MAX_NETWORK_UPGRADES] = {
         /*.strInfo =*/ "Test dummy info",
     },
     {
-        /*.nBranchId =*/ 0x5ba81b19,
+        /*.nBranchId =*/ 0x12345678,
         /*.strName =*/ "Overwinter",
         /*.strInfo =*/ "TBD",
     }
