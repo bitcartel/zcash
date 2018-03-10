@@ -1552,37 +1552,17 @@ bool IsInitialBlockDownload()
 {
     const CChainParams& chainParams = Params();
     LOCK(cs_main);
-
-    LogPrintf("FEDERER: %s: fImporting=%d, fReindex=%d, fCheckpointsEnabled=%d\n", __func__, fImporting, fReindex, fCheckpointsEnabled);
-    LogPrintf("FEDERER: %s: chainActive.Height()=%d\n", __func__, chainActive.Height());
-    LogPrintf("FEDERER: %s: Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()=%d\n", __func__, Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()));
-    if (fImporting || fReindex) {
-        LogPrintf("FEDERER: %s: returning true... reason = if (fImporting || fReindex)  \n", __func__);
+    if (fImporting || fReindex)
         return true;
-    }
-    if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints())) {
-        LogPrintf("FEDERER: %s: returning true... reason = if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints())\n", __func__);
+    if (fCheckpointsEnabled && chainActive.Height() < Checkpoints::GetTotalBlocksEstimate(chainParams.Checkpoints()))
         return true;
-    }
     static bool lockIBDState = false;
-    LogPrintf("FEDERER: %s: lockIBDState=%d\n", __func__, lockIBDState);
-    if (lockIBDState) {
-        LogPrintf("FEDERER: %s: returning true... reason = if (lockIBDState)\n", __func__);
+    if (lockIBDState)
         return false;
-    }
-    LogPrintf("FEDERER: %s: pindexBestHeader->nHeight=%d\n", __func__, pindexBestHeader->nHeight);
-    LogPrintf("FEDERER: %s: pindexBestHeader->nHeight - 24 * 6 = %d\n", __func__, pindexBestHeader->nHeight - 24 * 6);
-    LogPrintf("FEDERER: %s: pindexBestHeader->GetBlockTime()=%d\n", __func__, pindexBestHeader->GetBlockTime());
-    LogPrintf("FEDERER: %s: GetTime() - chainParams.MaxTipAge()=%d\n", __func__, GetTime() - chainParams.MaxTipAge());
-
     bool state = (chainActive.Height() < pindexBestHeader->nHeight - 24 * 6 ||
             pindexBestHeader->GetBlockTime() < GetTime() - chainParams.MaxTipAge());
-    if (!state) {
+    if (!state)
         lockIBDState = true;
-        LogPrintf("FEDERER: %s: lockIBDState set to true\n", __func__);
-    }
-    LogPrintf("FEDERER: %s: exiting function, returning state, where state = %d\n", __func__, state);
-
     return state;
 }
 
