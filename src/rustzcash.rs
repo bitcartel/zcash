@@ -11,8 +11,8 @@ extern crate lazy_static;
 use pairing::{BitIterator, Field, PrimeField, PrimeFieldRepr, bls12_381::{Bls12, Fr, FrRepr}};
 
 use sapling_crypto::{circuit::multipack,
-                     jubjub::{edwards, FixedGenerators, JubjubBls12, JubjubParams, Unknown,
-                              fs::FsRepr},
+                     jubjub::{edwards, FixedGenerators, JubjubBls12, JubjubEngine, JubjubParams, Unknown,
+                              ToUniform, fs::FsRepr},
                      pedersen_hash::{pedersen_hash, Personalization},
                      redjubjub::{self, Signature}, util::swap_bits_u64};
 
@@ -189,6 +189,44 @@ pub extern "system" fn librustzcash_merkle_hash(
     let result = unsafe { &mut *result };
 
     write_le(tmp, &mut result[..]);
+}
+
+
+/// Compute Sapling note commitment.
+#[no_mangle]
+pub extern "system" fn librustzcash_sapling_compute_cm(
+    diversifier: *const [c_uchar; 11],
+    pk_d: *const [c_uchar; 32],
+    value: uint64_t,
+    r: *const [c_uchar; 32],
+    result: *mut [c_uchar; 32],
+) -> bool {
+
+    let diversifier = sapling_crypto::primitives::Diversifier(unsafe { *diversifier });
+    let g_d = match diversifier.g_d::<Bls12>(&JUBJUB) {
+        Some(g_d) => g_d,
+        None => return false
+    };
+
+    let pk_d = match edwards::Point::<Bls12, Unknown>::read(&(unsafe { &*pk_d })[..], &JUBJUB) {
+        Ok(p) => p,
+        Err(_) => return false
+    };
+
+    let pk_d = match pk_d.as_prime_order(&JUBJUB) {
+        Some(pk_d) => pk_d,
+        None => return false
+    };
+
+    let r = <Bls12 as JubjubEngine>::Fs::to_uniform(unsafe { &(&*r)[..] });
+    let note = sapling_crypto::primitives::Note {
+        value, g_d, pk_d, r
+    };
+
+    let result = unsafe { &mut *result };
+    write_le(note.cm(&JUBJUB).into_repr(), &mut result[..]);
+
+    true
 }
 
 /// XOR two uint64_t values and return the result, used
